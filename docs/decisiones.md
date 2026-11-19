@@ -118,3 +118,20 @@ Lo revisé con LiteRT (`ai-edge-litert`). Afecta al manifiesto de la sección 4 
 
 ### D24 · El texto libre va al LLM, no al embedding
 - Se envía delimitado con `"""…"""`, y la instrucción de sistema aclara que no son órdenes, para protegerse de inyección de instrucciones. No entra en el embedding (sección 7.2, paso 2).
+
+## Integración con las apps (19/11/2026)
+
+### D25 · Cuenta fija del médico ⚠️
+- **Decisión:** el equipo pidió que las credenciales del médico estén escritas en el código. `revision/servicio.py` define `CUENTA_FIJA_USUARIO = "medico"` y `CUENTA_FIJA_CONTRASENA`. Al arrancar, la API crea esa cuenta, o la reactiva y le devuelve su contraseña si alguien la cambió. La web hace login normal con `/v1/auth/login` y recibe su JWT de 1 hora.
+- **Rompe la sección 9** (ningún secreto en el repositorio): cualquiera con acceso al repo puede entrar como médico.
+- **Alternativa recomendada después de la sustentación:** leer la contraseña de una variable de entorno que venga de Key Vault, o volver a `scripts/crear_medico.py`.
+
+### D26 · Datos de demostración (`scripts/sembrar_demo.py`)
+- Carga un fragmento `demo-no-clinica#1`, armado con los textos de `preguntas.json`, y 3 imágenes sintéticas en Revisión. Sirve para probar la app y la web sin guías reales ni servicio de reentrenamiento.
+- No corre si hay Azure configurado. Exige Azurite: con el Blob en memoria las imágenes se perderían al terminar el script.
+
+### D27 · El LLM falso responde según la severidad
+- Sin una respuesta fija configurada, `ProveedorLLMFalso` devuelve textos genéricos según la severidad que lee en la instrucción de sistema, y esos textos pasan la validación de 7.4. **No es contenido clínico**; solo sirve para probar la integración en local.
+
+### D28 · Con un signo de alarma, la app envía `clase: indeterminado` y `confianza: 0`
+- Cuando hay alarma el modelo no se ejecuta, pero `ConsultaOrientacion` exige clase y confianza. El backend no las usa para decidir nada: la severidad `alta` la manda la app.

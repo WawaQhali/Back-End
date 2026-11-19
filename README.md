@@ -14,7 +14,7 @@ La fuente de verdad es `wawa-qhali-backend.md`, junto con `wawa-qhali-cuestionar
 | 4 | Revisión: login, endpoints de la app web e internos; prueba completa del pipeline | ✅ (con imágenes sintéticas) |
 | 5 | Evidencias: OpenAPI en `docs/evidencias/` | En curso |
 
-El CI corre `ruff`, `lint-imports`, `pytest` (120 pruebas) y `pip-audit`.
+El CI corre `ruff`, `lint-imports`, `pytest` (123 pruebas) y `pip-audit`.
 
 ## Endpoints
 
@@ -39,10 +39,14 @@ cp .env.example .env          # completa JWT_SECRET e INTERNAL_API_KEY
 docker compose up -d          # PostgreSQL + pgvector y Azurite
 uv sync
 uv run alembic upgrade head
-uv run python -m scripts.crear_medico --usuario dra.prueba --rol medico
+uv run python -m scripts.sembrar_demo      # datos de DEMO: fragmento RAG + 3 fotos para la web
 uv run python -m scripts.ingesta_guias     # cuando haya guías aprobadas en guias/
-uv run uvicorn app.main:app --reload
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+**Cuenta del médico (fija, D25):** usuario `medico`, contraseña `WawaQhali-Medico-2026`. La API la crea sola al arrancar. Para más cuentas: `uv run python -m scripts.crear_medico --usuario X --rol medico|equipo`.
+
+Con `--host 0.0.0.0`, el emulador de Android llega al backend en `http://10.0.2.2:8000`. La web del médico se conecta a `http://localhost:8000`.
 
 - Salud: http://localhost:8000/health
 - OpenAPI: http://localhost:8000/docs
