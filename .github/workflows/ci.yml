@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  calidad:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: wawa
+          POSTGRES_PASSWORD: wawa_ci
+          POSTGRES_DB: wawa_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U wawa -d wawa_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: wawa_test
+      DB_USER: wawa
+      DB_PASSWORD: wawa_ci
+      REQUIERE_BD: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+      - name: Instalar dependencias
+        run: uv sync --frozen
+      - name: ruff
+        run: uv run ruff check
+      - name: import-linter
+        run: uv run lint-imports
+      - name: pytest
+        run: uv run pytest
+      - name: pip-audit
+        run: |
+          uv export --frozen --no-dev --no-hashes --no-emit-project > requirements-auditoria.txt
+          uvx pip-audit==2.9.0 --strict -r requirements-auditoria.txt
