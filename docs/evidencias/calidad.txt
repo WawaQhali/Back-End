@@ -1,0 +1,133 @@
+# Evidencias de calidad · 18/11/2026
+
+## ruff check
+All checks passed!
+
+## lint-imports
+Contracts
+Los modulos no se importan entre si KEPT
+shared no depende de los modulos KEPT
+Contracts: 2 kept, 0 broken.
+
+## pytest
+tests/autorizacion/test_autorizacion.py::test_registrar_consultar_y_revocar PASSED
+tests/autorizacion/test_autorizacion.py::test_revocar_publica_un_solo_evento_aunque_se_repita PASSED
+tests/autorizacion/test_autorizacion.py::test_volver_a_autorizar_tras_revocar PASSED
+tests/autorizacion/test_autorizacion.py::test_no_se_puede_gestionar_otra_instalacion PASSED
+tests/autorizacion/test_autorizacion.py::test_consultar_sin_registro_responde_404 PASSED
+tests/modelos/test_modelos.py::test_sin_modelo_publicado_el_manifiesto_responde_404 PASSED
+tests/modelos/test_modelos.py::test_publicar_y_leer_el_manifiesto PASSED
+tests/modelos/test_modelos.py::test_compuerta_rechaza_menor_sensibilidad_y_el_vigente_no_cambia PASSED
+tests/modelos/test_modelos.py::test_compuerta_rechaza_cambios_de_contrato[orden_de_clases] PASSED
+tests/modelos/test_modelos.py::test_compuerta_rechaza_cambios_de_contrato[clases] PASSED
+tests/modelos/test_modelos.py::test_compuerta_rechaza_cambios_de_contrato[tamano_de_entrada] PASSED
+tests/modelos/test_modelos.py::test_igual_o_mayor_sensibilidad_se_publica_y_el_anterior_se_retira PASSED
+tests/modelos/test_modelos.py::test_revertir_vuelve_a_la_version_anterior PASSED
+tests/modelos/test_modelos.py::test_permisos PASSED
+tests/modelos/test_modelos.py::test_version_repetida_responde_409 PASSED
+tests/modelos/test_modelos.py::test_candidato_con_formato_invalido_responde_422 PASSED
+tests/orientacion/test_contrato.py::test_cuestionario_v1_se_carga_con_8_de_riesgo_y_6_normales PASSED
+tests/orientacion/test_contrato.py::test_version_distinta_responde_422 PASSED
+tests/orientacion/test_contrato.py::test_id_desconocido_responde_422 PASSED
+tests/orientacion/test_contrato.py::test_opcion_inexistente_responde_422 PASSED
+tests/orientacion/test_contrato.py::test_opcion_de_v0_que_ya_no_existe_responde_422 PASSED
+tests/orientacion/test_contrato.py::test_si_no_solo_acepta_booleanos[si] PASSED
+tests/orientacion/test_contrato.py::test_si_no_solo_acepta_booleanos[true] PASSED
+tests/orientacion/test_contrato.py::test_si_no_solo_acepta_booleanos[1] PASSED
+tests/orientacion/test_contrato.py::test_opcion_no_acepta_booleano PASSED
+tests/orientacion/test_contrato.py::test_riesgo_en_true_sin_severidad_alta_responde_422[leve] PASSED
+tests/orientacion/test_contrato.py::test_riesgo_en_true_sin_severidad_alta_responde_422[moderada] PASSED
+tests/orientacion/test_contrato.py::test_riesgo_en_true_con_severidad_alta_pasa_la_validacion PASSED
+tests/orientacion/test_contrato.py::test_texto_libre_de_mas_de_200_caracteres_responde_422 PASSED
+tests/orientacion/test_contrato.py::test_sin_installation_id_responde_422 PASSED
+tests/orientacion/test_contrato.py::test_sin_guias_cargadas_responde_503 PASSED
+tests/orientacion/test_contrato.py::test_mas_de_20_consultas_por_hora_responde_429 PASSED
+tests/orientacion/test_rag.py::test_respuesta_valida_devuelve_recomendaciones_y_fuentes_sin_severidad PASSED
+tests/orientacion/test_rag.py::test_alta_con_emergencia_primero_se_acepta PASSED
+tests/orientacion/test_rag.py::test_si_ningun_fragmento_pasa_el_umbral_responde_503 PASSED
+tests/orientacion/test_rag.py::test_respuestas_invalidas_del_llm_terminan_en_503[sin_fuente] PASSED
+tests/orientacion/test_rag.py::test_respuestas_invalidas_del_llm_terminan_en_503[inventada] PASSED
+tests/orientacion/test_rag.py::test_respuestas_invalidas_del_llm_terminan_en_503[medicamento] PASSED
+tests/orientacion/test_rag.py::test_respuestas_invalidas_del_llm_terminan_en_503[leve_sin_accion] PASSED
+tests/orientacion/test_rag.py::test_respuestas_invalidas_del_llm_terminan_en_503[esquema] PASSED
+tests/orientacion/test_rag.py::test_si_el_llm_falla_responde_503 PASSED
+tests/orientacion/test_rag.py::test_si_el_llm_tarda_mas_de_15_s_responde_503 PASSED
+tests/orientacion/test_rag.py::test_medicamentos_y_dosis_se_rechazan[Dale 5 mg cada 8 horas. Si empeora, acude.-medicamento_o_dosis] PASSED
+tests/orientacion/test_rag.py::test_medicamentos_y_dosis_se_rechazan[Dale 5mg. Si empeora, acude.-medicamento_o_dosis] PASSED
+tests/orientacion/test_rag.py::test_medicamentos_y_dosis_se_rechazan[Un antihistam\xednico ayuda. Si empeora, acude.-medicamento_o_dosis] PASSED
+tests/orientacion/test_rag.py::test_medicamentos_y_dosis_se_rechazan[Revisa la DOSIS. Si empeora, acude.-medicamento_o_dosis] PASSED
+tests/orientacion/test_rag.py::test_medicamentos_y_dosis_se_rechazan[Usa LORATADINA. Si empeora, acude.-medicamento_o_dosis] PASSED
+tests/orientacion/test_rag.py::test_palabras_que_contienen_un_termino_no_se_rechazan PASSED
+tests/orientacion/test_rag.py::test_recomendacion_de_mas_de_300_caracteres_se_rechaza PASSED
+tests/orientacion/test_rag.py::test_mas_de_5_recomendaciones_se_rechaza PASSED
+tests/orientacion/test_rag.py::test_campo_severidad_en_la_respuesta_se_rechaza PASSED
+tests/orientacion/test_rag.py::test_moderada_sin_consulta_medica_se_rechaza PASSED
+tests/orientacion/test_rag.py::test_alta_exige_emergencia_en_la_primera_recomendacion PASSED
+tests/orientacion/test_rag.py::test_fragmentos_de_450_palabras_con_75_de_solape PASSED
+tests/orientacion/test_rag.py::test_solo_se_ingestan_guias_aprobadas PASSED
+tests/orientacion/test_rag.py::test_guia_sin_cabecera_es_un_error PASSED
+tests/recepcion/test_cifrado.py::test_ida_y_vuelta_con_el_formato_de_la_app PASSED
+tests/recepcion/test_cifrado.py::test_con_otro_installation_id_el_descifrado_falla PASSED
+tests/recepcion/test_cifrado.py::test_mgf1_con_sha1_no_se_puede_desenvolver PASSED
+tests/recepcion/test_donaciones.py::test_clave_publica_es_un_jwk_rsa_oaep_256 PASSED
+tests/recepcion/test_donaciones.py::test_sin_autorizacion_vigente_responde_403 PASSED
+tests/recepcion/test_donaciones.py::test_paquete_valido_queda_en_cuarentena_tal_cual PASSED
+tests/recepcion/test_donaciones.py::test_paquetes_con_formato_invalido_responden_422[kid] PASSED
+tests/recepcion/test_donaciones.py::test_paquetes_con_formato_invalido_responden_422[clave_256_bytes] PASSED
+tests/recepcion/test_donaciones.py::test_paquetes_con_formato_invalido_responden_422[nonce_16_bytes] PASSED
+tests/recepcion/test_donaciones.py::test_paquetes_con_formato_invalido_responden_422[datos_cortos] PASSED
+tests/recepcion/test_donaciones.py::test_paquetes_con_formato_invalido_responden_422[base64] PASSED
+tests/recepcion/test_donaciones.py::test_paquetes_con_formato_invalido_responden_422[version] PASSED
+tests/recepcion/test_donaciones.py::test_paquetes_con_formato_invalido_responden_422[alg] PASSED
+tests/recepcion/test_donaciones.py::test_campo_extra_o_faltante_responde_422 PASSED
+tests/recepcion/test_donaciones.py::test_paquete_de_mas_de_2_mb_responde_413 PASSED
+tests/recepcion/test_donaciones.py::test_revocar_borra_los_paquetes_en_cuarentena PASSED
+tests/recepcion/test_donaciones.py::test_mas_de_10_donaciones_por_hora_responde_429 PASSED
+tests/revision/test_revision.py::test_login_correcto_da_un_jwt_que_sirve PASSED
+tests/revision/test_revision.py::test_login_incorrecto_o_inactivo_responde_401_igual PASSED
+tests/revision/test_revision.py::test_contrasena_guardada_con_argon2 PASSED
+tests/revision/test_revision.py::test_mas_de_5_logins_por_minuto_responde_429 PASSED
+tests/revision/test_revision.py::test_solo_el_medico_ve_las_pendientes PASSED
+tests/revision/test_revision.py::test_pendientes_paginadas_de_la_mas_antigua_a_la_mas_nueva PASSED
+tests/revision/test_revision.py::test_detalle_trae_la_etiqueta_preliminar_y_un_enlace_temporal PASSED
+tests/revision/test_revision.py::test_etiquetar_saca_la_imagen_de_pendientes_y_se_puede_corregir PASSED
+tests/revision/test_revision.py::test_etiqueta_invalida_responde_422 PASSED
+tests/revision/test_revision.py::test_eliminar_borra_el_blob_y_la_oculta PASSED
+tests/revision/test_revision.py::test_imagen_inexistente_responde_404 PASSED
+tests/revision/test_revision.py::test_internos_exigen_la_clave_del_servicio PASSED
+tests/revision/test_revision.py::test_mismo_paquete_dos_veces_responde_409 PASSED
+tests/revision/test_revision.py::test_etiquetas_desde_una_fecha PASSED
+tests/revision/test_revision.py::test_imagen_usada_en_un_modelo_ya_no_se_puede_reetiquetar PASSED
+tests/revision/test_revision.py::test_revocar_borra_las_imagenes_no_usadas_y_conserva_las_usadas PASSED
+tests/shared/test_app.py::test_health_responde_200_sin_autenticacion PASSED
+tests/shared/test_app.py::test_openapi_lista_health PASSED
+tests/shared/test_app.py::test_ruta_inexistente_da_error_generico PASSED
+tests/shared/test_app.py::test_cors_solo_permite_la_app_web PASSED
+tests/shared/test_app.py::test_peticion_de_mas_de_2_mb_responde_413 PASSED
+tests/shared/test_app.py::test_error_de_validacion_no_devuelve_los_valores_recibidos PASSED
+tests/shared/test_app.py::test_error_inesperado_no_filtra_el_detalle PASSED
+tests/shared/test_app.py::test_error_api_se_devuelve_con_su_codigo PASSED
+tests/shared/test_app.py::test_cuerpo_sin_content_length_que_excede_responde_413 PASSED
+tests/shared/test_auth.py::test_token_valido_con_rol_correcto PASSED
+tests/shared/test_auth.py::test_sin_token_responde_401 PASSED
+tests/shared/test_auth.py::test_rol_equivocado_responde_403 PASSED
+tests/shared/test_auth.py::test_token_vencido_responde_401 PASSED
+tests/shared/test_auth.py::test_token_con_otra_firma_responde_401 PASSED
+tests/shared/test_auth.py::test_clave_interna PASSED
+tests/shared/test_auth.py::test_installation_id_debe_ser_uuid PASSED
+tests/shared/test_auth.py::test_argon2 PASSED
+tests/shared/test_eventos.py::test_evento_publicado_y_confirmado_llega_a_cada_suscriptor PASSED
+tests/shared/test_eventos.py::test_si_la_transaccion_se_revierte_el_evento_no_existe PASSED
+tests/shared/test_eventos.py::test_evento_pendiente_se_procesa_al_arrancar PASSED
+tests/shared/test_eventos.py::test_si_el_manejador_falla_no_se_marca_y_se_reintenta PASSED
+tests/shared/test_eventos.py::test_cambios_del_manejador_y_marca_van_en_la_misma_transaccion PASSED
+tests/shared/test_eventos.py::test_no_se_puede_suscribir_dos_veces_el_mismo_modulo PASSED
+tests/shared/test_logs.py::test_uuid_en_la_ruta_del_access_log_se_registra_como_hash PASSED
+tests/shared/test_logs.py::test_hash_no_depende_de_mayusculas PASSED
+tests/shared/test_proveedores.py::test_clave_publica_falsa_es_un_jwk_rsa_3072 PASSED
+tests/shared/test_proveedores.py::test_envoltura_rsa_oaep_256_ida_y_vuelta PASSED
+tests/shared/test_proveedores.py::test_embeddings_falsos_son_deterministas_y_normalizados PASSED
+tests/shared/test_proveedores.py::test_llm_falso_devuelve_la_respuesta_configurada PASSED
+tests/shared/test_proveedores.py::test_sin_variables_de_azure_se_usan_los_falsos PASSED
+tests/test_pipeline.py::test_pipeline_completo_de_donacion_a_etiqueta PASSED
+============================ 120 passed in 16.92s =============================
