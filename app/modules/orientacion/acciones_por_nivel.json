@@ -1,0 +1,32 @@
+{
+  "_nota": "Frases que cuentan como 'la accion de su nivel' (seccion 7.4). Se comparan sin mayusculas ni tildes, como texto contenido en la recomendacion. PENDIENTE: validar con la medica especialista.",
+  "leve": [
+    "si empeora",
+    "si las ronchas empeoran",
+    "si aparece dificultad para respirar",
+    "si le cuesta respirar",
+    "si se hinchan",
+    "hinchazon de la cara",
+    "hinchazon de los labios",
+    "busca atencion medica",
+    "acude a un establecimiento de salud",
+    "acude al centro de salud",
+    "consulta con un medico",
+    "consulta con el pediatra"
+  ],
+  "moderada": [
+    "consulta medica",
+    "acude a consulta",
+    "consulta con un medico",
+    "consulta con el pediatra",
+    "lleva a tu hijo al pediatra",
+    "acude al pediatra",
+    "acude al centro de salud",
+    "acude a un establecimiento de salud"
+  ],
+  "alta": [
+    "emergencia",
+    "samu",
+    "106"
+  ]
+}

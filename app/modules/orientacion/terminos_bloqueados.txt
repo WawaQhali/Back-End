@@ -1,0 +1,61 @@
+# Terminos que la respuesta del LLM NO puede mencionar (seccion 7.4).
+# Uno por linea; sin distinguir mayusculas ni tildes. Se buscan como palabra completa.
+# PENDIENTE: revisar y completar con la medica especialista.
+
+# Dosis y unidades
+dosis
+mg
+ml
+miligramo
+miligramos
+mililitro
+mililitros
+gotas
+cucharadita
+cucharaditas
+jarabe
+pastilla
+pastillas
+tableta
+tabletas
+comprimido
+comprimidos
+inyeccion
+ampolla
+
+# Grupos de medicamentos
+antihistaminico
+antihistaminicos
+corticoide
+corticoides
+corticoesteroide
+corticoesteroides
+esteroide
+esteroides
+
+# Antihistaminicos
+cetirizina
+levocetirizina
+loratadina
+desloratadina
+fexofenadina
+clorfenamina
+clorfeniramina
+hidroxicina
+difenhidramina
+bilastina
+rupatadina
+ketotifeno
+
+# Corticoides
+prednisona
+prednisolona
+metilprednisolona
+dexametasona
+betametasona
+hidrocortisona
+deflazacort
+
+# Adrenalina (solo la menciona el mensaje fijo de emergencia, nunca el LLM)
+adrenalina
+epinefrina
