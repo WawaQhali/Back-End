@@ -72,3 +72,13 @@ def test_sin_variables_de_azure_se_usan_los_falsos() -> None:
     )
     assert isinstance(crear_proveedor_claves(settings), ProveedorClavesFalso)
     assert isinstance(crear_proveedor_llm(settings), ProveedorLLMFalso)
+
+
+async def test_llm_falso_sin_respuesta_fija_contesta_segun_la_severidad() -> None:
+    from app.modules.orientacion.esquemas import Severidad
+    from app.modules.orientacion.servicio import REGLAS, SISTEMA, validar_respuesta_llm
+
+    llm = ProveedorLLMFalso()
+    for severidad in Severidad:
+        crudo = await llm.completar_json(SISTEMA.format(severidad=severidad.value), "")
+        validar_respuesta_llm(crudo, severidad, {"F1"}, REGLAS)  # no lanza

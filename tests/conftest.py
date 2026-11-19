@@ -104,7 +104,7 @@ def _estado_limpio() -> None:
     llm = obtener_proveedor_llm()
     assert isinstance(blob, ProveedorBlobMemoria) and isinstance(llm, ProveedorLLMFalso)
     blob.blobs.clear()
-    llm.respuesta = dict(ProveedorLLMFalso.RESPUESTA_POR_DEFECTO)
+    llm.respuesta = None
     llm.llamadas.clear()
 
 

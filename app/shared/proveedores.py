@@ -124,23 +124,44 @@ class ProveedorLLM(ABC):
 
 
 class ProveedorLLMFalso(ProveedorLLM):
-    """Embeddings deterministas por hash y una respuesta fija configurable."""
+    """Embeddings deterministas por hash y respuestas fijas.
 
-    RESPUESTA_POR_DEFECTO: dict[str, Any] = {
-        "recomendaciones": ["Consulta con un profesional de salud."],
-        "fuentes": ["F1"],
+    Sin `respuesta` configurada, contesta segun la severidad que lee de la instruccion de
+    sistema, con textos que pasan la validacion de 7.4. Asi el flujo completo funciona en
+    local sin Azure. NO es contenido clinico: solo sirve para probar la integracion.
+    """
+
+    RESPUESTAS_POR_SEVERIDAD: dict[str, list[str]] = {
+        "leve": [
+            "Mantén a tu hijo con ropa fresca y evita que se rasque las ronchas.",
+            "Si empeora o aparece dificultad para respirar o hinchazón de la cara o los "
+            "labios, busca atención médica de inmediato.",
+        ],
+        "moderada": [
+            "Acude a consulta médica con el pediatra o en el centro de salud en las "
+            "próximas 24 a 48 horas.",
+            "Si empeora o aparece dificultad para respirar, acude a emergencia.",
+        ],
+        "alta": [
+            "Acude a emergencia de inmediato o llama al SAMU (106).",
+            "Lleva la foto de la lesión para mostrarla al médico.",
+        ],
     }
 
-    def __init__(self, respuesta: dict[str, Any] | None = None) -> None:
-        self.respuesta = respuesta if respuesta is not None else dict(self.RESPUESTA_POR_DEFECTO)
+    def __init__(self, respuesta: Any = None) -> None:
+        self.respuesta = respuesta  # None = automatica segun la severidad
         self.llamadas: list[tuple[str, str]] = []
 
     async def embeddings(self, textos: list[str]) -> list[list[float]]:
         return [self._vector(t) for t in textos]
 
-    async def completar_json(self, sistema: str, usuario: str) -> dict[str, Any]:
+    async def completar_json(self, sistema: str, usuario: str) -> Any:
         self.llamadas.append((sistema, usuario))
-        return self.respuesta
+        if self.respuesta is not None:
+            return self.respuesta
+        coincidencia = re.search(r"aplicación: (leve|moderada|alta)", sistema)
+        severidad = coincidencia.group(1) if coincidencia else "leve"
+        return {"recomendaciones": self.RESPUESTAS_POR_SEVERIDAD[severidad], "fuentes": ["F1"]}
 
     @staticmethod
     def _vector(texto: str) -> list[float]:
