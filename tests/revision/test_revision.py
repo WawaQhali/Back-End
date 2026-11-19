@@ -289,3 +289,47 @@ async def test_revocar_borra_las_imagenes_no_usadas_y_conserva_las_usadas(
     assert quedan == {usada, ajena}
     assert no_usada_datos["blob_path"] not in blob.blobs
     assert usada_datos["blob_path"] in blob.blobs
+
+
+# --- Cuenta fija del medico (D25) ------------------------------------------------------
+
+
+async def test_cuenta_fija_se_crea_y_permite_entrar(
+    cliente_bd: httpx.AsyncClient,
+    sesionador,  # noqa: ANN001
+) -> None:
+    from app.modules.revision.servicio import (
+        CUENTA_FIJA_CONTRASENA,
+        CUENTA_FIJA_USUARIO,
+        asegurar_cuenta_fija,
+    )
+
+    await asegurar_cuenta_fija(sesionador)
+    await asegurar_cuenta_fija(sesionador)  # idempotente: no la duplica
+
+    r = await _login(cliente_bd, CUENTA_FIJA_USUARIO, CUENTA_FIJA_CONTRASENA)
+    assert r.status_code == 200
+    assert r.json()["rol"] == "medico"
+
+
+async def test_cuenta_fija_se_reactiva_y_recupera_su_contrasena(
+    cliente_bd: httpx.AsyncClient,
+    sesionador,  # noqa: ANN001
+) -> None:
+    from app.modules.revision.servicio import (
+        CUENTA_FIJA_CONTRASENA,
+        CUENTA_FIJA_USUARIO,
+        asegurar_cuenta_fija,
+    )
+    from app.shared.auth import hashear_contrasena
+
+    await asegurar_cuenta_fija(sesionador)
+    async with sesionador() as s, s.begin():
+        fila = (await s.execute(select(Usuario))).scalar_one()
+        fila.activo = False
+        fila.hash_contrasena = hashear_contrasena("cambiada")
+
+    await asegurar_cuenta_fija(sesionador)
+
+    r = await _login(cliente_bd, CUENTA_FIJA_USUARIO, CUENTA_FIJA_CONTRASENA)
+    assert r.status_code == 200

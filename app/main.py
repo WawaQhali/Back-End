@@ -33,8 +33,16 @@ async def _ciclo_eventos() -> None:
         await asyncio.sleep(INTERVALO_EVENTOS_S)
 
 
+async def _crear_cuenta_fija() -> None:
+    try:
+        await revision.asegurar_cuenta_fija(obtener_sesionador())
+    except Exception as error:  # la BD puede no estar migrada todavia
+        log.warning("No se pudo crear la cuenta fija del medico: %s", type(error).__name__)
+
+
 @contextlib.asynccontextmanager
 async def _ciclo_de_vida(_: FastAPI) -> AsyncIterator[None]:
+    await _crear_cuenta_fija()
     tarea = asyncio.create_task(_ciclo_eventos())
     try:
         yield

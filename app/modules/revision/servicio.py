@@ -5,7 +5,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.modules.revision import repositorio
 from app.modules.revision.esquemas import (
@@ -54,6 +54,33 @@ async def login(sesion: AsyncSession, usuario: str, contrasena: str) -> Token:
         raise ErrorApi(401, "credenciales_invalidas", "Usuario o contrasena incorrectos.")
     rol = Rol(fila.rol)
     return Token(access_token=emitir_token(str(fila.id), rol), rol=rol)
+
+
+# Cuenta fija del medico, pedida por el equipo: se crea sola al arrancar.
+# ⚠️ Rompe la regla de la seccion 9 (secretos fuera del codigo). Ver docs/decisiones.md D25.
+CUENTA_FIJA_USUARIO = "medico"
+CUENTA_FIJA_CONTRASENA = "WawaQhali-Medico-2026"  # noqa: S105
+
+
+async def asegurar_cuenta_fija(sesionador: async_sessionmaker[AsyncSession]) -> None:
+    """Crea la cuenta fija si no existe; si existe, la deja activa, con rol medico y con
+    la contrasena del codigo. Idempotente: se llama en cada arranque."""
+    async with sesionador() as sesion, sesion.begin():
+        fila = await repositorio.usuario_por_nombre(sesion, CUENTA_FIJA_USUARIO)
+        if fila is None:
+            sesion.add(
+                Usuario(
+                    usuario=CUENTA_FIJA_USUARIO,
+                    hash_contrasena=hashear_contrasena(CUENTA_FIJA_CONTRASENA),
+                    rol=Rol.medico.value,
+                    activo=True,
+                )
+            )
+            return
+        if not verificar_contrasena(fila.hash_contrasena, CUENTA_FIJA_CONTRASENA):
+            fila.hash_contrasena = hashear_contrasena(CUENTA_FIJA_CONTRASENA)
+        fila.rol = Rol.medico.value
+        fila.activo = True
 
 
 async def crear_usuario(sesion: AsyncSession, usuario: str, contrasena: str, rol: Rol) -> uuid.UUID:
