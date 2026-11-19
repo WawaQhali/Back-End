@@ -135,3 +135,27 @@ Lo revisé con LiteRT (`ai-edge-litert`). Afecta al manifiesto de la sección 4 
 
 ### D28 · Con un signo de alarma, la app envía `clase: indeterminado` y `confianza: 0`
 - Cuando hay alarma el modelo no se ejecuta, pero `ConsultaOrientacion` exige clase y confianza. El backend no las usa para decidir nada: la severidad `alta` la manda la app.
+
+## Despliegue en Azure (19/11/2026)
+
+### D29 · Frase fija para la recomendación de nivel `leve`
+- **Decisión:** la instrucción de sistema fija la última recomendación de `leve`: «Si empeora, le cuesta respirar o se le hinchan la cara o los labios, busca atención médica.».
+- **Razón:** solo decía «indica cuándo buscar atención médica». Con gpt-4o, 2 de cada 3 respuestas leves no traían ninguna frase de `acciones_por_nivel.json → leve` y la validación respondía 503 (`leve_sin_accion`). Con la frase fija salieron 6 de 6. Moderada y alta ya tenían una frase fija.
+
+### D30 · Modelo de chat: `gpt-4o` 2024-11-20 (Standard)
+- **Decisión:** el despliegue de chat se llama `gpt-4o`.
+- **Razón:** `gpt-4o-mini` 2024-07-18 se retiró el 31/03/2026, y la suscripción de estudiante no tiene cuota para `gpt-4.1-mini`. `gpt-5-mini` no acepta `temperature=0`, lo que obligaría a cambiar `ProveedorLLMAzure`. Cuesta unos US$0,01 por consulta y se retira el 14/04/2027.
+
+### D31 · Secretos: Key Vault → secretos del Container App en cada despliegue
+- **Decisión:** `JWT_SECRET` e `INTERNAL_API_KEY` viven solo en Key Vault (`jwt-secret`, `internal-api-key`). El workflow `cd.yml` los lee en cada despliegue y los carga como secretos del Container App, que llegan a la API como variables de entorno (sección 9).
+- **Alternativa:** referencias `keyvaultref` del Container App.
+- **Razón:** la suscripción Azure for Students crea solo entornos «express», que no las admiten (`ExpressKeyVaultSecretsNotSupported`).
+- **Consecuencia:** si se rota un secreto en Key Vault, se aplica en el siguiente despliegue.
+
+### D32 · Migraciones en el CD con la identidad `id-wawa-ci`
+- **Decisión:** `cd.yml` corre `alembic upgrade head` desde el runner de GitHub antes de actualizar la app (sección 10). Abre una regla de firewall temporal con la IP del runner y la borra al terminar.
+- Las tablas son del rol `wawa_owner` (NOLOGIN). `id-wawa-ci` y el administrador son miembros, y su rol por defecto en la base `wawa` es `wawa_owner`. La API entra como `id-wawa`, que solo tiene SELECT/INSERT/UPDATE/DELETE, más privilegios por defecto para las tablas nuevas.
+- **Razón:** si las tablas fueran de una persona, la identidad del CI no podría alterarlas.
+
+### D33 · Regiones
+- PostgreSQL está en `centralus`, porque la oferta de estudiante no lo permite en `eastus`/`eastus2`. El Container App está en `centralus`, junto a la base. OpenAI, Storage, Key Vault y ACR están en `eastus2`.

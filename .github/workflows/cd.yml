@@ -1,0 +1,108 @@
+name: CD
+
+# Despliegue continuo (sección 11 de la guía): cuando el CI pasa en main, se construye la
+# imagen, se publica en ACR, se corren las migraciones y se actualiza el Container App.
+# También se puede lanzar a mano desde la pestaña Actions (workflow_dispatch).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write # OIDC con Azure: no hay contraseñas guardadas en GitHub
+  contents: read
+
+concurrency:
+  group: cd-produccion
+  cancel-in-progress: false
+
+env:
+  RG: rg-wawaqhali
+  ACR: acrwawaqxv8s
+  APP: wawa-backend
+  PG: pg-wawa-qxv8s
+  KV: kv-wawa-qxv8s
+  IMAGEN: acrwawaqxv8s.azurecr.io/wawa-backend
+
+jobs:
+  desplegar:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Iniciar sesión en Azure (identidad id-wawa-ci)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Construir y publicar la imagen
+        id: imagen
+        run: |
+          TAG="${IMAGEN}:$(git rev-parse --short=12 HEAD)"
+          az acr login --name "$ACR"
+          docker build -t "$TAG" .
+          docker push "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.13.8"
+
+      - name: Abrir el firewall de PostgreSQL para este runner
+        run: |
+          IP=$(curl -fsS https://api.ipify.org)
+          az postgres flexible-server firewall-rule create -g "$RG" --server-name "$PG" \
+            --name "github-${{ github.run_id }}" --start-ip-address "$IP" --end-ip-address "$IP" -o none
+
+      - name: Migraciones (alembic upgrade head)
+        env:
+          DB_HOST: ${{ env.PG }}.postgres.database.azure.com
+          DB_NAME: wawa
+          DB_USER: id-wawa-ci # entra con su token de Entra ID; su rol por defecto es wawa_owner
+          # config.py los exige, pero las migraciones no los usan
+          JWT_SECRET: solo-para-migraciones-no-se-usa-en-la-api
+          INTERNAL_API_KEY: solo-para-migraciones-no-se-usa-en-la-api
+        run: |
+          uv sync --frozen --no-dev
+          uv run alembic upgrade head
+
+      - name: Cerrar el firewall
+        if: always()
+        run: |
+          az postgres flexible-server firewall-rule delete -g "$RG" --server-name "$PG" \
+            --name "github-${{ github.run_id }}" --yes -o none || true
+
+      - name: Copiar los secretos desde Key Vault
+        # El entorno "express" de la suscripción de estudiante no admite referencias a Key
+        # Vault. Key Vault sigue siendo la única fuente: se leen en cada despliegue.
+        run: |
+          JWT=$(az keyvault secret show --vault-name "$KV" -n jwt-secret --query value -o tsv)
+          API=$(az keyvault secret show --vault-name "$KV" -n internal-api-key --query value -o tsv)
+          echo "::add-mask::$JWT"
+          echo "::add-mask::$API"
+          az containerapp secret set -g "$RG" -n "$APP" \
+            --secrets "jwt-secret=$JWT" "internal-api-key=$API" -o none
+
+      - name: Actualizar el Container App
+        run: |
+          az containerapp update -g "$RG" -n "$APP" --image "${{ steps.imagen.outputs.tag }}" \
+            --revision-suffix "r${{ github.run_number }}" -o none
+
+      - name: Verificar /health
+        run: |
+          URL="https://$(az containerapp show -g "$RG" -n "$APP" --query properties.configuration.ingress.fqdn -o tsv)"
+          for i in $(seq 1 20); do
+            if curl -fsS -m 30 "$URL/health"; then echo; echo "Desplegado en $URL"; exit 0; fi
+            sleep 10
+          done
+          echo "La API no respondió en /health" >&2
+          exit 1
