@@ -1,0 +1,31 @@
+# Solo para desarrollo local: PostgreSQL con pgvector + Azurite (emulador de Blob).
+# La contrasena es local y desechable; en Azure se entra con identidad gestionada.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: wawa
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-wawa_local}
+      POSTGRES_DB: wawa
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wawa -d wawa"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.33.0
+    command: azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --loose --skipApiVersionCheck
+    ports:
+      - "10000:10000"
+    volumes:
+      - azurite:/data
+
+volumes:
+  pgdata:
+  azurite:

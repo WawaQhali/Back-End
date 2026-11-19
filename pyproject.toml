@@ -1,0 +1,75 @@
+[project]
+name = "wawa-qhali-backend"
+version = "0.1.0"
+description = "API de Wawa Qhali: autorizacion, recepcion, revision, orientacion y modelos"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.7",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "pgvector>=0.3.6",
+    "azure-identity>=1.19",
+    "azure-storage-blob>=12.24",
+    "azure-keyvault-keys>=4.10",
+    "openai>=1.55",
+    "pyjwt>=2.10",
+    "argon2-cffi>=23.1",
+    "slowapi>=0.1.9",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "httpx>=0.28",
+    "ruff>=0.8",
+    "import-linter>=2.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "S", "ASYNC"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--import-mode=importlib"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+markers = ["bd: necesita PostgreSQL (docker compose up -d)"]
+
+[tool.importlinter]
+root_package = "app"
+
+[[tool.importlinter.contracts]]
+name = "Los modulos no se importan entre si"
+type = "independence"
+modules = [
+    "app.modules.autorizacion",
+    "app.modules.recepcion",
+    "app.modules.revision",
+    "app.modules.orientacion",
+    "app.modules.modelos",
+]
+
+[[tool.importlinter.contracts]]
+name = "shared no depende de los modulos"
+type = "forbidden"
+source_modules = ["app.shared"]
+forbidden_modules = ["app.modules"]
