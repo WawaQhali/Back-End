@@ -93,9 +93,9 @@ jobs:
             --secrets "jwt-secret=$JWT" "internal-api-key=$API" -o none
 
       - name: Actualizar el Container App
+        # Sin --revision-suffix: el entorno "express" no lo admite.
         run: |
-          az containerapp update -g "$RG" -n "$APP" --image "${{ steps.imagen.outputs.tag }}" \
-            --revision-suffix "r${{ github.run_number }}" -o none
+          az containerapp update -g "$RG" -n "$APP" --image "${{ steps.imagen.outputs.tag }}" -o none
 
       - name: Verificar /health
         run: |
