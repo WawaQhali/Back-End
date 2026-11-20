@@ -85,12 +85,17 @@ async def test_alta_con_emergencia_primero_se_acepta(
     sesionador,
     llm,  # noqa: ANN001
 ) -> None:
-    await _cargar_guia(sesionador, _texto_cercano())
+    consulta = {**CONSULTA, "severidad": "alta", "respuestas": {"hinchazon_cara": True}}
+    # Guía armada con esta misma consulta: con embeddings falsos, la de la consulta leve
+    # queda a 0.56, por encima del umbral (D34).
+    await _cargar_guia(
+        sesionador,
+        servicio.texto_consulta(ConsultaOrientacion.model_validate(consulta), CUESTIONARIO),
+    )
     llm.respuesta = {
         "recomendaciones": ["Acude a emergencia de inmediato o llama al SAMU (106)."],
         "fuentes": ["F1"],
     }
-    consulta = {**CONSULTA, "severidad": "alta", "respuestas": {"hinchazon_cara": True}}
     r = await cliente_bd.post("/v1/orientacion", json=consulta, headers=cabeceras_app(uuid.uuid4()))
     assert r.status_code == 200
 

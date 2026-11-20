@@ -37,8 +37,9 @@ log = logging.getLogger(__name__)
 
 CARPETA = Path(__file__).parent
 CANTIDAD_FRAGMENTOS = 5
-# TODO(seccion 13): calibrar con las guias reales y el despliegue de embeddings.
-UMBRAL_DISTANCIA = 0.6
+# Calibrado con las guias reales y text-embedding-3-small (D34, scripts/calibrar_umbral.py):
+# los fragmentos reales quedan en 0.31-0.41 y los de otros temas desde 0.44.
+UMBRAL_DISTANCIA = 0.42
 MAX_CARACTERES_RECOMENDACION = 300
 
 SISTEMA = """Eres un asistente de orientación para padres sobre urticaria aguda en niños de 1 a 4 años.
