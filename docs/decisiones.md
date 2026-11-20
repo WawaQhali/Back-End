@@ -159,3 +159,24 @@ Lo revisé con LiteRT (`ai-edge-litert`). Afecta al manifiesto de la sección 4 
 
 ### D33 · Regiones
 - PostgreSQL está en `centralus`, porque la oferta de estudiante no lo permite en `eastus`/`eastus2`. El Container App está en `centralus`, junto a la base. OpenAI, Storage, Key Vault y ACR están en `eastus2`.
+
+### D34 · Umbral de distancia del RAG: 0.42 (antes 0.6)
+- **Decisión:** `UMBRAL_DISTANCIA = 0.42` (distancia coseno, `text-embedding-3-small`).
+- **Cómo se midió (19/11/2026):** `scripts/calibrar_umbral.py`, contra los 9 fragmentos reales de las 6 guías en Azure. Usa 36 consultas realistas armadas con el mismo `texto_consulta` que usa el backend: 6 leves, 18 moderadas y 12 altas, con desencadenantes, tiempos y clases variados. Como negativos, mide 10 fragmentos señuelo de otros temas (varicela, dengue, otitis, diarrea, dermatitis atópica, quemaduras, vacunas, sueño, asma, cocina), que no se guardan en la base.
+- **Resultados:**
+
+  | Medida | mín | mediana | máx |
+  | --- | --- | --- | --- |
+  | Fragmento real más cercano (top-1) | 0.312 | 0.351 | 0.368 |
+  | Los 5 fragmentos reales que se envían al LLM (top-5) | 0.312 | 0.360 | 0.405 |
+  | Señuelos | 0.442 (asma) | 0.600 | 0.891 |
+
+  | Umbral | Consultas con fragmentos | Fragmentos que pasan (de 5) | Señuelos que pasarían |
+  | --- | --- | --- | --- |
+  | 0.40 | 100 % | 4.86 | 0 % |
+  | **0.42** | **100 %** | **5.00** | **0 %** |
+  | 0.46 | 100 % | 5.00 | 9 % |
+  | 0.60 (anterior) | 100 % | 5.00 | 50 % |
+
+- **Razón:** 0.42 es el único valor redondo que deja pasar los 5 fragmentos reales de todas las consultas y ningún señuelo. Con 0.6 pasaba la mitad de los textos de otros temas. El señuelo más cercano es asma (0.442), porque comparte «le cuesta respirar» y «labios morados». Por eso el margen es corto (0.015 hacia cada lado) y el valor no se debe subir. Si una consulta queda sin fragmentos, la respuesta es 503 y la app usa su respaldo local, que es el lado seguro.
+- **Consecuencia:** el texto que se convierte en vector sale solo de las respuestas del cuestionario (el comentario del padre no entra), así que las consultas reales caen siempre en un rango estrecho. **Hay que repetir la medición cuando cambien las guías**, por ejemplo después de la revisión de la médica: `uv run python -m scripts.calibrar_umbral`.
