@@ -196,3 +196,24 @@ Lo revisé con LiteRT (`ai-edge-litert`). Afecta al manifiesto de la sección 4 
 - **Alternativa:** mantener el 0.90. Se descartó porque obliga a cualquier modelo nuevo a superar un número que el modelo vigente no tiene. El `1.1.0` detecta mucho mejor que el `1.0.0` en el mismo test (88–92 % frente a 57 %) y aun así quedaba bloqueado.
 - **Razón:** la compuerta solo tiene sentido si compara números medidos igual. La regla del código no cambia: un candidato no se publica si su sensibilidad es menor que la del vigente.
 - **Pendiente:** la compuerta solo mira la sensibilidad. Un modelo que dice «urticaria» a todo la pasa: el `1.0.0` reconoce solo el 22 % de lo que no es urticaria. La especificidad se reporta en el informe de evaluación (`datos/evaluaciones/`), aunque la compuerta no la exija.
+- **Pendiente 2 (incumple esta regla):** el servicio `Reentrenamiento` (`entrenar.py`, `dividir`) mide la sensibilidad sobre un 20 % al azar de sus propias fotos. Con 10 por clase son solo 2 positivos, así que puede registrar un 1.0 inflado y pasar la compuerta. Mientras no se corrija, **un candidato automático no se publica sin evaluarlo antes con `evaluar.py` en el test fijo.** Arreglo propuesto: subir el test a `modelos/test-fijo/` y que el servicio lo use para la sensibilidad que registra.
+
+### D37 · Zona principal: si en la foto se ven varias partes del cuerpo, se evalúa solo una
+
+- **Fecha:** 22/11/2026. Lo pidió el profesor: «¿qué pasa si la foto muestra dos brazos?».
+- **Decisión:** antes de clasificar, la app (`lib/services/zona_principal.dart`) busca la zona de piel principal en el celular y le pasa al modelo **solo el recorte de esa zona**:
+  - **Nivel 2:** el segmentador de MediaPipe (Multiclass Selfie Segmenter, Apache 2.0, `assets/modelo/segmentador.tflite`, 16 MB) separa la piel del cuerpo de la cara, el pelo, la ropa y el fondo. Corre con el mismo `tflite_flutter`, sin dependencias nuevas, con entrada en -1..1.
+  - **Nivel 1:** si el segmentador no reconoce a la persona (en primeros planos marca todo como fondo) o falla, se usa la regla de color YCbCr de la validación.
+  - **Elección:** se separan las zonas conectadas, se descartan las menores al 2 % de la foto y se queda la más grande, con más peso a la del centro.
+  - **Recorte:** un cuadrado del lado menor de la zona × 1.2 (mínimo 40 % de la foto), centrado en ella. En un brazo largo toma su parte central y no alcanza al otro brazo.
+  - **Pantalla de resultado:** muestra la foto con el contorno de la zona evaluada. Si había otras zonas de tamaño parecido, dice cuántas y que se evaluó solo la marcada.
+- **Alternativa:**
+  - Detección de personas con YOLO o un servicio en Azure: se descartó porque la foto no debe salir del celular y no hay GPU.
+  - Solo el nivel 1: confunde con piel los fondos beige y la cara.
+- **Razón:**
+  - Resuelve el caso de varias partes del cuerpo.
+  - Además acerca la entrada a lo que el modelo aprendió, que son primeros planos de la lesión. Con la foto entera, un cuerpo completo con fondo lo confunde.
+- **Limitaciones (probadas con fotos reales, `datos/herramientas/probar_zona.py`):**
+  - Dos zonas que se tocan quedan como una sola.
+  - Con manos sueltas sobre fondo blanco, el segmentador ve solo una parte.
+  - El APK crece unos 16 MB.
