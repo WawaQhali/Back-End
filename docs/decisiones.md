@@ -217,3 +217,34 @@ Lo revisé con LiteRT (`ai-edge-litert`). Afecta al manifiesto de la sección 4 
   - Dos zonas que se tocan quedan como una sola.
   - Con manos sueltas sobre fondo blanco, el segmentador ve solo una parte.
   - El APK crece unos 16 MB.
+
+### D38 · Modelo `1.1.1`: se agrega piel sana de primer plano (Healthy_Skin) al entrenamiento
+
+- **Fecha:** 23/11/2026.
+- **Problema:** en la prueba con el celular, una foto de piel sana salió «compatible». El `1.1.0` reconoce como sana solo el 51 % de la piel sana de primer plano y el 45 % de lo que no es urticaria.
+- **Decisión:** se entrena el `1.1.1` (corrida D) con la misma configuración que el `1.1.0` y se agregan **273 fotos de piel sana de primer plano** de Hugging Face `MegPaulson/Healthy_Skin`:
+  - de 6 039 fotos, se filtraron las de poca piel, manchas rojas, oscuras, amarillas o moradas y borrosas;
+  - se quitaron duplicados con pHash (quedan 327);
+  - en la **revisión a ojo** se sacaron 54 con bultos, puntos rojos, acné o picaduras;
+  - se separan al azar con su propio generador: 191 para entrenamiento (cada foto se copia 4 veces), 41 para validación y 41 para test;
+  - las demás fuentes casi no cambian (±1–3 fotos por la búsqueda de duplicados) y los pacientes de DermoPed por partición son los mismos.
+- **Resultado en el test fijo (D36):** 1 225 imágenes; los dos modelos se midieron en el mismo test.
+
+  | Métrica (umbral 0.5) | `1.1.0` | `1.1.1` |
+  | --- | --- | --- |
+  | Sensibilidad | 87,9 % (248/282) | **89,7 %** (253/282) |
+  | Especificidad (todo) | 51,9 % | **55,1 %** |
+  | Especificidad sin manos ni Healthy_Skin | 44,9 % | **47,5 %** |
+  | Solo Healthy_Skin | 51,2 % (21/41) | **80,5 %** (33/41) |
+  | Piel de bebé (incubadora) | 11,9 % | 10,6 % |
+  | Por paciente de DermoPed (sens. / esp.) | 18/19 · 26/39 | 18/19 · 27/39 |
+
+  - Pasa la compuerta: 0.897 ≥ 0.879.
+  - Se registró como candidato con sensibilidad **0.897** y `umbral_confianza` 0.6. Está en `modelos/1.1.1/modelo.tflite`, con `sha256 8437731f…` y 11 902 324 bytes.
+  - El TFLite no da NaN en ninguna de las 1 225 imágenes del test.
+- **Alternativas:**
+  - MSID (CC BY 4.0): solo salieron 8 parches útiles, porque son fotos de stock con caras y cuerpos enteros.
+  - Fotos propias: no hubo tiempo de tomarlas.
+  - Opción A, preguntar «¿Ves ronchas?» en la app: queda para el caso de que el modelo no mejore.
+- **Reserva:** Healthy_Skin **no declara licencia ni origen**. Se usa solo con fines académicos y se informa en el 3er avance.
+- **Pendiente:** la piel de bebé de cuerpo entero sigue en ~11 %. Lo mitiga la zona principal (D37), pero hacen falta fotos propias tomadas como en la app.
