@@ -4,7 +4,15 @@ cuestionario v1)."""
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictInt,
+    StrictStr,
+    model_validator,
+)
 
 
 class Severidad(StrEnum):
@@ -20,6 +28,13 @@ class Clase(StrEnum):
     indeterminado = "indeterminado"
 
 
+# D40: datos del nino que la app pide antes del cuestionario. Opcionales para no
+# romper las versiones de la app que aun no los envian.
+EDAD_MINIMA_ANIOS = 1
+EDAD_MAXIMA_ANIOS = 4
+Sexo = Literal["femenino", "masculino"]
+
+
 class ConsultaOrientacion(BaseModel):
     severidad: Severidad
     clase: Clase
@@ -28,6 +43,8 @@ class ConsultaOrientacion(BaseModel):
     # Se valida contra preguntas.json. Estrictos: `true` no puede llegar como "true" o 1.
     respuestas: dict[str, StrictBool | StrictStr]
     texto_libre: str | None = Field(default=None, max_length=200)
+    edad_anios: StrictInt | None = Field(default=None, ge=EDAD_MINIMA_ANIOS, le=EDAD_MAXIMA_ANIOS)
+    sexo: Sexo | None = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -54,6 +71,8 @@ class ConsultaOrientacion(BaseModel):
                         "muy_alergico": False,
                     },
                     "texto_libre": "Empezó después de un resfrío.",
+                    "edad_anios": 2,
+                    "sexo": "femenino",
                 }
             ]
         }

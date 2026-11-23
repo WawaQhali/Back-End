@@ -95,6 +95,32 @@ async def test_texto_libre_de_mas_de_200_caracteres_responde_422(
     assert r.status_code == 422
 
 
+@pytest.mark.parametrize("edad", [0, 5, -1, "2", True])
+async def test_edad_fuera_de_1_a_4_anios_responde_422(
+    cliente_bd: httpx.AsyncClient, edad: int
+) -> None:
+    r = await _post(cliente_bd, _consulta(edad_anios=edad, sexo="femenino"))
+    assert r.status_code == 422
+
+
+async def test_sexo_invalido_responde_422(cliente_bd: httpx.AsyncClient) -> None:
+    r = await _post(cliente_bd, _consulta(edad_anios=2, sexo="otro"))
+    assert r.status_code == 422
+
+
+@pytest.mark.parametrize("edad", [1, 2, 3, 4])
+async def test_edad_de_1_a_4_y_sexo_pasan_la_validacion(
+    cliente_bd: httpx.AsyncClient, edad: int
+) -> None:
+    r = await _post(cliente_bd, _consulta(edad_anios=edad, sexo="masculino"))
+    assert r.status_code != 422  # sin guias cargadas termina en 503, no en 422
+
+
+async def test_edad_y_sexo_son_opcionales(cliente_bd: httpx.AsyncClient) -> None:
+    r = await _post(cliente_bd, _consulta())  # versiones anteriores de la app
+    assert r.status_code != 422
+
+
 async def test_sin_installation_id_responde_422(cliente_bd: httpx.AsyncClient) -> None:
     r = await cliente_bd.post("/v1/orientacion", json=_consulta())
     assert r.status_code == 422

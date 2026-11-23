@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 
 from app.shared.auth import Rol
 
@@ -41,13 +41,17 @@ class Token(BaseModel):
 
 
 class EtiquetaPreliminar(BaseModel):
-    """Clase y confianza del modelo, respuestas del cuestionario y version del modelo."""
+    """Clase y confianza del modelo, respuestas del cuestionario, version del modelo y,
+    desde D40, edad (1 a 4 anios) y sexo del nino. Estos dos son opcionales: las
+    donaciones de versiones anteriores de la app no los traen."""
 
     clase: Literal["compatible", "no_compatible", "indeterminado"]
     confianza: float = Field(ge=0, le=1)
     respuestas: dict[str, StrictBool | StrictStr]
     version_modelo: str = Field(max_length=50)
     version_cuestionario: str | None = Field(default=None, max_length=20)
+    edad_anios: StrictInt | None = Field(default=None, ge=1, le=4)
+    sexo: Literal["femenino", "masculino"] | None = None
 
 
 class ImagenVerificada(BaseModel):
@@ -69,6 +73,8 @@ class ImagenVerificada(BaseModel):
                         "respuestas": {"picazon": True, "tiempo_evolucion": "menos_24h"},
                         "version_modelo": "1.3.0",
                         "version_cuestionario": "v1",
+                        "edad_anios": 3,
+                        "sexo": "masculino",
                     },
                 }
             ]

@@ -56,6 +56,8 @@ CASOS = [
     ),
     ("indeterminado", 0.52, (224, 184, 154), "habones", {"extension": "varias_zonas"}),
 ]
+# Edad (1 a 4 anios) y sexo de cada caso, en el mismo orden (D40).
+NINOS = [(2, "femenino"), (4, "masculino"), (1, "femenino")]
 
 
 def _png(ancho: int, alto: int, piel: tuple[int, int, int], tipo: str) -> bytes:
@@ -134,7 +136,7 @@ async def principal() -> int:
             cantidad = await ingestar(sesion, obtener_proveedor_llm(), documento)
         print(f"- RAG: {cantidad} fragmento de demostracion")
 
-        for clase, confianza, piel, tipo, cambios in CASOS:
+        for (clase, confianza, piel, tipo, cambios), (edad, sexo) in zip(CASOS, NINOS, strict=True):
             ruta = f"verificadas/demo-{uuid.uuid4()}.png"
             await blob.subir(ruta, _png(480, 360, piel, tipo), "image/png")
             datos = ImagenVerificada(
@@ -147,6 +149,8 @@ async def principal() -> int:
                     respuestas={**RESPUESTAS, **cambios},
                     version_modelo="0.0.0-demo",
                     version_cuestionario=CUESTIONARIO.version,
+                    edad_anios=edad,
+                    sexo=sexo,
                 ),
             )
             async with obtener_sesionador()() as sesion:

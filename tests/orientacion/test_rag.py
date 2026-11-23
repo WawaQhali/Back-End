@@ -247,6 +247,17 @@ def test_alta_exige_emergencia_en_la_primera_recomendacion() -> None:
 # --- Ingesta ---------------------------------------------------------------------------------
 
 
+def test_edad_y_sexo_van_al_llm_pero_no_al_embedding() -> None:
+    """D40: el LLM los recibe; el texto de busqueda (embedding) no cambia."""
+    con = ConsultaOrientacion.model_validate({**CONSULTA, "edad_anios": 2, "sexo": "femenino"})
+    sin = ConsultaOrientacion.model_validate(CONSULTA)
+    texto = servicio.texto_consulta(con, CUESTIONARIO)
+    assert texto == servicio.texto_consulta(sin, CUESTIONARIO)
+    assert "Datos del niño:\n\n2 años, niña" in servicio.mensaje_usuario(con, texto, {})
+    assert "Datos del niño" not in servicio.mensaje_usuario(sin, texto, {})
+    assert servicio.datos_del_nino(1, "masculino") == "1 año, niño"
+
+
 def test_fragmentos_de_450_palabras_con_75_de_solape() -> None:
     palabras = [f"p{i}" for i in range(1000)]
     fragmentos = dividir_en_fragmentos(" ".join(palabras))
