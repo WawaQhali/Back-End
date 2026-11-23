@@ -14,15 +14,14 @@ La fuente de verdad es `wawa-qhali-backend.md`, junto con `wawa-qhali-cuestionar
 | 4 | Revisión: login, endpoints de la app web e internos; prueba completa del pipeline | ✅ (con imágenes sintéticas) |
 | 5 | Evidencias: OpenAPI en `docs/evidencias/` | En curso |
 
-El CI corre `ruff`, `lint-imports`, `pytest` (123 pruebas) y `pip-audit`.
+El CI corre `ruff`, `lint-imports`, `pytest` (142 pruebas) y `pip-audit`.
 
 ## Endpoints
 
 | Quién | Rutas |
 | --- | --- |
 | App móvil (`X-Installation-Id`) | `POST/GET/DELETE /v1/autorizaciones`, `GET /v1/claves/publica`, `POST /v1/donaciones`, `POST /v1/orientacion`, `GET /v1/modelos/manifiesto` |
-| Médico (JWT, rol `medico`) | `POST /v1/auth/login`, `GET /v1/revision/pendientes`, `GET /v1/revision/{id}`, `POST /v1/revision/{id}/etiqueta`, `POST /v1/revision/{id}/eliminar` |
-| Equipo (JWT, rol `equipo`) | `POST /v1/modelos/{version}/publicar`, `POST /v1/modelos/{version}/revertir` |
+| Médico (JWT, rol `medico`, el único rol con login: D39) | `POST /v1/auth/login`, `GET /v1/revision/pendientes`, `GET /v1/revision/{id}`, `POST /v1/revision/{id}/etiqueta`, `POST /v1/revision/{id}/eliminar`, `POST /v1/modelos/{version}/publicar`, `POST /v1/modelos/{version}/revertir` |
 | Reentrenamiento (`X-Api-Key`) | `POST /v1/interno/revision/verificadas`, `GET /v1/interno/revision/etiquetas?desde=`, `POST /v1/interno/revision/usadas`, `POST /v1/interno/modelos/candidatos` |
 
 El detalle, con ejemplos, está en `/docs` (OpenAPI) y en [`docs/evidencias/openapi.json`](docs/evidencias/openapi.json).
@@ -44,7 +43,7 @@ uv run python -m scripts.ingesta_guias     # cuando haya guías aprobadas en gui
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**Cuenta del médico (fija, D25):** usuario `medico`, contraseña `WawaQhali-Medico-2026`. La API la crea sola al arrancar. Para más cuentas: `uv run python -m scripts.crear_medico --usuario X --rol medico|equipo`.
+**Cuenta del médico (fija, D25):** usuario `medico`, contraseña `WawaQhali-Medico-2026`. La API la crea sola al arrancar. Para más cuentas de médico: `uv run python -m scripts.crear_medico --usuario X`.
 
 Con `--host 0.0.0.0`, el emulador de Android llega al backend en `http://10.0.2.2:8000`. La web del médico se conecta a `http://localhost:8000`.
 
