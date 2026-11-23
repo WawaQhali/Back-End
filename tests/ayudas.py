@@ -4,13 +4,16 @@ import base64
 import json
 import os
 import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import jwt
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-from app.shared.auth import Rol, emitir_token
+from app.config import obtener_settings
+from app.shared.auth import ALGORITMO_JWT, Rol, emitir_token
 from app.shared.proveedores import ProveedorClavesFalso
 
 OAEP_SHA256 = padding.OAEP(
@@ -42,6 +45,14 @@ def cabeceras_app(installation_id: object) -> dict[str, str]:
 
 def cabeceras_rol(rol: Rol, usuario_id: str | None = None) -> dict[str, str]:
     return {"Authorization": f"Bearer {emitir_token(usuario_id or str(uuid.uuid4()), rol)}"}
+
+
+def cabeceras_rol_eliminado(rol: str = "equipo") -> dict[str, str]:
+    """JWT bien firmado y vigente, pero con un rol que ya no existe (D39)."""
+    ahora = datetime.now(UTC)
+    datos = {"sub": str(uuid.uuid4()), "rol": rol, "iat": ahora, "exp": ahora + timedelta(hours=1)}
+    secreto = obtener_settings().jwt_secret.get_secret_value()
+    return {"Authorization": f"Bearer {jwt.encode(datos, secreto, algorithm=ALGORITMO_JWT)}"}
 
 
 def _b64(datos: bytes) -> str:

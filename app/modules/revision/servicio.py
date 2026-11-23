@@ -50,7 +50,8 @@ async def login(sesion: AsyncSession, usuario: str, contrasena: str) -> Token:
     fila = await repositorio.usuario_por_nombre(sesion, usuario)
     hash_guardado = fila.hash_contrasena if fila else _HASH_DE_RELLENO
     valida = verificar_contrasena(hash_guardado, contrasena)
-    if fila is None or not valida or not fila.activo:
+    # Una cuenta vieja con un rol que ya no existe (p. ej. `equipo`, D39) no entra.
+    if fila is None or not valida or not fila.activo or fila.rol not in set(Rol):
         raise ErrorApi(401, "credenciales_invalidas", "Usuario o contrasena incorrectos.")
     rol = Rol(fila.rol)
     return Token(access_token=emitir_token(str(fila.id), rol), rol=rol)
