@@ -8,9 +8,10 @@ import httpx
 import pytest
 
 from app.modules.orientacion import servicio
-from app.modules.orientacion.esquemas import ConsultaOrientacion, Severidad
+from app.modules.orientacion.esquemas import Clase, ConsultaOrientacion, Severidad
 from app.modules.orientacion.servicio import (
     CUESTIONARIO,
+    FRASE_NO_COMPATIBLE,
     REGLAS,
     DocumentoGuia,
     RespuestaRechazada,
@@ -19,6 +20,7 @@ from app.modules.orientacion.servicio import (
     leer_guia,
     validar_respuesta_llm,
 )
+from app.shared.errores import ErrorApi
 from tests.ayudas import RESPUESTAS_V1, cabeceras_app
 
 CONSULTA = {
@@ -242,6 +244,53 @@ def test_alta_exige_emergencia_en_la_primera_recomendacion() -> None:
     with pytest.raises(RespuestaRechazada, match="alta_sin_emergencia_primero"):
         _validar(con_emergencia_segunda, Severidad.alta)
     _validar({"recomendaciones": ["Acude a EMERGENCIA ya."], "fuentes": ["F2"]}, Severidad.alta)
+
+
+# --- D41: foto no compatible con urticaria ---------------------------------------------------
+
+
+def _consulta(**cambios: object) -> ConsultaOrientacion:
+    return ConsultaOrientacion.model_validate({**CONSULTA, **cambios})
+
+
+def test_no_compatible_con_severidad_leve_es_incoherente() -> None:
+    with pytest.raises(ErrorApi) as error:
+        servicio.validar_consulta(_consulta(clase="no_compatible", severidad="leve"), CUESTIONARIO)
+    assert (error.value.status, error.value.codigo) == (422, "severidad_incoherente")
+    servicio.validar_consulta(_consulta(clase="no_compatible", severidad="moderada"), CUESTIONARIO)
+
+
+def test_la_regla_no_compatible_solo_va_al_llm_cuando_aplica() -> None:
+    con_regla = servicio.instrucciones_sistema(
+        _consulta(clase="no_compatible", severidad="moderada")
+    )
+    assert FRASE_NO_COMPATIBLE in con_regla
+    assert "No des cuidados de urticaria" in con_regla
+    for consulta in (
+        _consulta(),
+        _consulta(clase="no_compatible", severidad="alta"),  # manda la emergencia
+    ):
+        assert FRASE_NO_COMPATIBLE not in servicio.instrucciones_sistema(consulta)
+
+
+def test_no_compatible_exige_la_frase_en_la_primera_recomendacion() -> None:
+    def validar(recomendaciones: list[str]) -> None:
+        validar_respuesta_llm(
+            {"recomendaciones": recomendaciones, "fuentes": ["F1"]},
+            Severidad.moderada,
+            {"F1"},
+            REGLAS,
+            Clase.no_compatible,
+        )
+
+    resumen = "Cuéntale al médico que las manchas aparecieron hace menos de 24 horas."
+    with pytest.raises(RespuestaRechazada, match="no_compatible_sin_frase_primero"):
+        validar(["Acude a consulta médica en 24 a 48 horas.", resumen])
+    with pytest.raises(RespuestaRechazada, match="no_compatible_sin_frase_primero"):
+        validar([resumen, FRASE_NO_COMPATIBLE])
+    validar([FRASE_NO_COMPATIBLE, resumen])
+    # Sin tildes ni mayúsculas también cuenta, como las demás frases (7.4).
+    validar([servicio.normalizar(FRASE_NO_COMPATIBLE).upper()])
 
 
 # --- Ingesta ---------------------------------------------------------------------------------
