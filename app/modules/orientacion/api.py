@@ -24,7 +24,8 @@ _ERROR = {"error": {"codigo": "...", "mensaje": "..."}}
     responses={
         422: {
             "description": "Version del cuestionario distinta, pregunta u opcion inexistente, "
-            "o signo de alarma con severidad distinta de alta",
+            "signo de alarma con severidad distinta de alta, o clase no_compatible con "
+            "severidad leve (D41)",
             "content": {"application/json": {"example": _ERROR}},
         },
         429: {"description": "Mas de 20 consultas por hora en esta instalacion"},

@@ -267,3 +267,17 @@ Lo revisé con LiteRT (`ai-edge-litert`). Afecta al manifiesto de la sección 4 
 - **Valores:** `edad_anios` es un entero estricto de 1 a 4 (`"2"`, `true`, 0 o 5 → 422). `sexo` es `femenino` o `masculino`.
 - **Opcionales:** si faltan, se acepta igual, porque las versiones anteriores de la app y las donaciones ya guardadas no los traen.
 - **Alternativa:** edad en meses (12 a 59). Se descartó porque la app pide años, igual que el alcance del proyecto (1 a 4 años).
+
+### D41 · Foto «no compatible» → severidad moderada y sin cuidados de urticaria
+- **Fecha:** 24/11/2026.
+- **Problema:** con piel sana el modelo podía decir «no compatible», pero la app calculaba la severidad solo con el cuestionario (**leve**, «se puede manejar en casa») y tanto el LLM como el respaldo local daban cuidados de urticaria.
+- **Decisión:**
+  - **App:** «no compatible» sin signos de alarma → severidad **moderada** (consulta médica en 24 a 48 h). En «¿Por qué?» se muestra «La foto no muestra lesiones compatibles con urticaria…». El respaldo local usa `recomendacionesLocales.no_compatible` (`assets/db.json`).
+  - **Backend:** `POST /v1/orientacion` responde 422 `severidad_incoherente` si llega `clase = no_compatible` con `severidad = leve`, igual que un signo de alarma sin `alta`. Con `no_compatible` y severidad moderada, el prompt agrega una regla: la primera recomendación es la frase fija «La foto no muestra lesiones compatibles con urticaria. Te recomendamos que un médico evalúe a tu wawa en las próximas 24 a 48 horas.», las demás resumen los síntomas para el médico y no se dan cuidados de urticaria. El validador rechaza la respuesta (503 → respaldo local) si esa frase no está en la primera recomendación (`no_compatible_sin_frase_primero`). Se agregó «un medico evalue» a las acciones de `moderada`.
+  - Con un signo de alarma sigue mandando la emergencia (`alta`): la regla de la foto no se aplica.
+- **Compatibilidad:** los APK anteriores mandan `no_compatible` con `leve`. Ahora reciben 422 y usan sus recomendaciones locales; antes recibían cuidados de urticaria.
+- **Alternativas:**
+  - A: cambiar solo el texto del LLM. Se descartó porque seguía diciendo «Leve: se puede manejar en casa».
+  - C: un 4.º resultado, «Otra afección». Se descartó porque cambia el contrato de la app, el backend, el validador y la web antes de las pruebas del 27/11.
+  - D: un mensaje fijo sin LLM. Se descartó porque se pierde el resumen según los síntomas.
+- **Razón:** que el resultado de la foto y la severidad no se contradigan, y que se derive al médico cuando la foto no se parece a una urticaria. **No arregla** el caso inverso (el modelo dice «compatible» sobre piel sana); para ese caso queda la opción A de la pregunta «¿Ves ronchas?».
