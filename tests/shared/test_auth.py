@@ -20,6 +20,7 @@ from app.shared.auth import (
     verificar_contrasena,
 )
 from app.shared.errores import registrar_manejadores
+from tests.ayudas import cabeceras_rol_eliminado
 
 
 def _app() -> FastAPI:
@@ -64,10 +65,13 @@ async def test_sin_token_responde_401(c: httpx.AsyncClient) -> None:
     assert r.status_code == 401
 
 
-async def test_rol_equivocado_responde_403(c: httpx.AsyncClient) -> None:
-    token = emitir_token("u2", Rol.equipo)
-    r = await c.get("/medico", headers={"Authorization": f"Bearer {token}"})
-    assert r.status_code == 403
+def test_solo_existe_el_rol_medico() -> None:
+    assert [r.value for r in Rol] == ["medico"]  # D39: se quito `equipo`
+
+
+async def test_token_con_un_rol_que_ya_no_existe_responde_401(c: httpx.AsyncClient) -> None:
+    r = await c.get("/medico", headers=cabeceras_rol_eliminado("equipo"))
+    assert r.status_code == 401
 
 
 async def test_token_vencido_responde_401(c: httpx.AsyncClient) -> None:

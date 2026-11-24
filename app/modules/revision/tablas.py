@@ -37,5 +37,5 @@ class Usuario(Base):
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     usuario: Mapped[str] = mapped_column(String(100), unique=True)
     hash_contrasena: Mapped[str] = mapped_column(String(200))
-    rol: Mapped[str] = mapped_column(String(20))  # medico | equipo
+    rol: Mapped[str] = mapped_column(String(20))  # medico (unico rol, D39)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)

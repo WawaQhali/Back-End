@@ -1,7 +1,7 @@
 """Identificacion de quien llama (seccion 4).
 
 - App movil: header X-Installation-Id (UUID aleatorio de la instalacion).
-- Medico y equipo: JWT Bearer HS256 de 1 hora con rol `medico` o `equipo`.
+- Medico: JWT Bearer HS256 de 1 hora con rol `medico` (es el unico rol con login, D39).
 - Servicio de reentrenamiento: header X-Api-Key, solo en /v1/interno/*.
 """
 
@@ -29,8 +29,9 @@ _bearer = HTTPBearer(auto_error=False)
 
 
 class Rol(StrEnum):
+    """Solo el medico entra con usuario y contrasena (D39: se quito el rol `equipo`)."""
+
     medico = "medico"
-    equipo = "equipo"
 
 
 class Sesion(BaseModel):

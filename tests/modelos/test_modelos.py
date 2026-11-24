@@ -7,11 +7,12 @@ import pytest
 
 from app.config import obtener_settings
 from app.shared.auth import Rol
-from tests.ayudas import cabeceras_app, cabeceras_rol
+from tests.ayudas import cabeceras_app, cabeceras_rol, cabeceras_rol_eliminado
 
 pytestmark = pytest.mark.bd
 
-EQUIPO = cabeceras_rol(Rol.equipo)
+# D39: publicar y revertir los hace el medico; ya no existe el rol `equipo`.
+MEDICO = cabeceras_rol(Rol.medico)
 
 
 def _interno() -> dict[str, str]:
@@ -37,7 +38,7 @@ async def _registrar(cliente: httpx.AsyncClient, candidato: dict) -> httpx.Respo
 
 
 async def _publicar(cliente: httpx.AsyncClient, version: str) -> httpx.Response:
-    return await cliente.post(f"/v1/modelos/{version}/publicar", headers=EQUIPO)
+    return await cliente.post(f"/v1/modelos/{version}/publicar", headers=MEDICO)
 
 
 async def _manifiesto(cliente: httpx.AsyncClient) -> httpx.Response:
@@ -121,13 +122,13 @@ async def test_revertir_vuelve_a_la_version_anterior(cliente_bd: httpx.AsyncClie
     await _registrar(cliente_bd, _candidato("1.1.0", 0.93))
     await _publicar(cliente_bd, "1.1.0")
 
-    r = await cliente_bd.post("/v1/modelos/1.1.0/revertir", headers=EQUIPO)
+    r = await cliente_bd.post("/v1/modelos/1.1.0/revertir", headers=MEDICO)
 
     assert r.status_code == 200
     assert r.json()["version"] == "1.0.0"
     assert (await _manifiesto(cliente_bd)).json()["version"] == "1.0.0"
     # 1.0.0 no tiene anterior
-    r = await cliente_bd.post("/v1/modelos/1.0.0/revertir", headers=EQUIPO)
+    r = await cliente_bd.post("/v1/modelos/1.0.0/revertir", headers=MEDICO)
     assert r.json()["error"]["codigo"] == "sin_anterior"
 
 
@@ -137,9 +138,14 @@ async def test_permisos(cliente_bd: httpx.AsyncClient) -> None:
     )
     assert sin_clave.status_code == 401
     await _registrar(cliente_bd, _candidato("1.0.0", 0.9))
-    medico = cabeceras_rol(Rol.medico)
-    assert (await cliente_bd.post("/v1/modelos/1.0.0/publicar", headers=medico)).status_code == 403
-    assert (await cliente_bd.post("/v1/modelos/1.0.0/publicar")).status_code == 401
+    publicar = "/v1/modelos/1.0.0/publicar"
+    assert (await cliente_bd.post(publicar)).status_code == 401
+    # Un token del antiguo rol `equipo` ya no sirve (D39)
+    equipo = cabeceras_rol_eliminado("equipo")
+    assert (await cliente_bd.post(publicar, headers=equipo)).status_code == 401
+    # La app movil tampoco puede publicar
+    app = cabeceras_app(uuid.uuid4())
+    assert (await cliente_bd.post(publicar, headers=app)).status_code == 401
 
 
 async def test_version_repetida_responde_409(cliente_bd: httpx.AsyncClient) -> None:

@@ -34,7 +34,7 @@ _NO_EXISTE = {404: {"description": "No existe la imagen o fue eliminada"}}
 
 @router.post(
     "/auth/login",
-    summary="Login del medico o del equipo: JWT de 1 hora",
+    summary="Login del medico: JWT de 1 hora",
     responses={
         401: {"description": "Usuario o contrasena incorrectos"},
         429: {"description": "Mas de 5 intentos por minuto desde esta IP"},

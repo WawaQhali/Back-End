@@ -13,7 +13,8 @@ from app.shared.proveedores import ProveedorBlob, obtener_proveedor_blob
 
 router = APIRouter(tags=["modelos"])
 
-_SOLO_EQUIPO = [Depends(requiere_rol(Rol.equipo))]
+# D39: publicar y revertir los hace el medico (ya no existe el rol `equipo`).
+_SOLO_MEDICO = [Depends(requiere_rol(Rol.medico))]
 
 
 @router.get(
@@ -42,7 +43,7 @@ async def registrar_candidato(candidato: Candidato, sesion: SesionBD) -> EstadoV
 
 @router.post(
     "/modelos/{version}/publicar",
-    dependencies=_SOLO_EQUIPO,
+    dependencies=_SOLO_MEDICO,
     summary="Publicar un candidato si pasa la compuerta de sensibilidad",
     responses={
         404: {"description": "No existe esa version"},
@@ -58,7 +59,7 @@ async def publicar(version: str, sesion: SesionBD) -> EstadoVersion:
 
 @router.post(
     "/modelos/{version}/revertir",
-    dependencies=_SOLO_EQUIPO,
+    dependencies=_SOLO_MEDICO,
     summary="Retirar la version vigente y volver a publicar la anterior",
     responses={
         404: {"description": "No existe esa version"},

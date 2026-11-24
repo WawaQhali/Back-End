@@ -11,7 +11,7 @@ from app.config import obtener_settings
 from app.modules.revision.servicio import crear_usuario
 from app.modules.revision.tablas import Imagen, Usuario
 from app.shared.auth import Rol
-from tests.ayudas import RESPUESTAS_V1, cabeceras_app, cabeceras_rol
+from tests.ayudas import RESPUESTAS_V1, cabeceras_app, cabeceras_rol, cabeceras_rol_eliminado
 
 pytestmark = pytest.mark.bd
 
@@ -88,6 +88,21 @@ async def test_login_incorrecto_o_inactivo_responde_401_igual(
     assert (await _login(cliente_bd, usuario, contrasena)).status_code == 401
 
 
+async def test_una_cuenta_vieja_del_equipo_no_puede_entrar(
+    cliente_bd: httpx.AsyncClient,
+    cuenta: tuple[str, str],
+    sesionador,  # noqa: ANN001
+) -> None:
+    """D39: solo existe el rol medico. Una fila que quedo con rol `equipo` no entra."""
+    usuario, contrasena = cuenta
+    async with sesionador() as s, s.begin():
+        fila = (await s.execute(select(Usuario))).scalar_one()
+        fila.rol = "equipo"
+    r = await _login(cliente_bd, usuario, contrasena)
+    assert r.status_code == 401
+    assert r.json()["error"]["codigo"] == "credenciales_invalidas"
+
+
 async def test_contrasena_guardada_con_argon2(cuenta: tuple[str, str], sesionador) -> None:  # noqa: ANN001
     async with sesionador() as s:
         fila = (await s.execute(select(Usuario))).scalar_one()
@@ -107,8 +122,8 @@ async def test_mas_de_5_logins_por_minuto_responde_429(
 
 async def test_solo_el_medico_ve_las_pendientes(cliente_bd: httpx.AsyncClient) -> None:
     assert (await cliente_bd.get("/v1/revision/pendientes")).status_code == 401
-    equipo = cabeceras_rol(Rol.equipo)
-    assert (await cliente_bd.get("/v1/revision/pendientes", headers=equipo)).status_code == 403
+    equipo = cabeceras_rol_eliminado("equipo")  # rol quitado en D39
+    assert (await cliente_bd.get("/v1/revision/pendientes", headers=equipo)).status_code == 401
 
 
 async def test_pendientes_paginadas_de_la_mas_antigua_a_la_mas_nueva(
@@ -139,6 +154,29 @@ async def test_detalle_trae_la_etiqueta_preliminar_y_un_enlace_temporal(
     assert detalle["etiqueta_preliminar"]["respuestas"] == RESPUESTAS_V1
     assert detalle["url"].startswith(f"memoria://{datos['blob_path']}?se=")
     assert detalle["estado"] == "pendiente"
+
+
+async def test_detalle_trae_edad_y_sexo_del_nino(cliente_bd: httpx.AsyncClient, blob) -> None:  # noqa: ANN001
+    """D40: la app los pide antes del cuestionario y la web del medico los muestra."""
+    datos = _verificada()
+    datos["etiqueta_preliminar"] |= {"edad_anios": 3, "sexo": "femenino"}
+    id_imagen = await _registrar(cliente_bd, datos, blob)
+    prelim = (await cliente_bd.get(f"/v1/revision/{id_imagen}", headers=MEDICO)).json()[
+        "etiqueta_preliminar"
+    ]
+    assert (prelim["edad_anios"], prelim["sexo"]) == (3, "femenino")
+
+
+@pytest.mark.parametrize(
+    "cambios", [{"edad_anios": 0}, {"edad_anios": 5}, {"sexo": "otro"}, {"edad_anios": "2"}]
+)
+async def test_edad_fuera_de_1_a_4_o_sexo_invalido_responde_422(
+    cliente_bd: httpx.AsyncClient, cambios: dict
+) -> None:
+    datos = _verificada()
+    datos["etiqueta_preliminar"] |= cambios
+    r = await cliente_bd.post("/v1/interno/revision/verificadas", json=datos, headers=_interno())
+    assert r.status_code == 422
 
 
 async def test_etiquetar_saca_la_imagen_de_pendientes_y_se_puede_corregir(

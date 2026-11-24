@@ -1,8 +1,7 @@
-"""Alta de cuentas del medico y del equipo (seccion 2).
+"""Alta de cuentas del medico (seccion 2). Es el unico rol con login (D39).
 
 Uso (desde la carpeta del backend, con la base configurada en .env):
-    uv run python -m scripts.crear_medico --usuario dra.quispe --rol medico
-    uv run python -m scripts.crear_medico --usuario fabricio --rol equipo
+    uv run python -m scripts.crear_medico --usuario dra.quispe
 
 La contrasena se pide por teclado (nunca como argumento, para que no quede en el
 historial de la terminal) y se guarda con Argon2.
@@ -41,9 +40,8 @@ def _pedir_contrasena() -> str:
 if __name__ == "__main__":
     analizador = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     analizador.add_argument("--usuario", required=True)
-    analizador.add_argument("--rol", required=True, choices=[r.value for r in Rol])
     argumentos = analizador.parse_args()
     try:
-        asyncio.run(principal(argumentos.usuario, Rol(argumentos.rol), _pedir_contrasena()))
+        asyncio.run(principal(argumentos.usuario, Rol.medico, _pedir_contrasena()))
     except ValueError as error:
         sys.exit(str(error))

@@ -248,3 +248,22 @@ Lo revisé con LiteRT (`ai-edge-litert`). Afecta al manifiesto de la sección 4 
   - Opción A, preguntar «¿Ves ronchas?» en la app: queda para el caso de que el modelo no mejore.
 - **Reserva:** Healthy_Skin **no declara licencia ni origen**. Se usa solo con fines académicos y se informa en el 3er avance.
 - **Pendiente:** la piel de bebé de cuerpo entero sigue en ~11 %. Lo mitiga la zona principal (D37), pero hacen falta fotos propias tomadas como en la app.
+
+## Correcciones del curso (23/11/2026)
+
+### D39 · Solo el médico tiene acceso: se quita el rol `equipo`
+- **Fecha:** 23/11/2026.
+- **Decisión:** el único rol con login es `medico`. `Rol` queda solo con `medico`, y publicar o revertir un modelo (`POST /v1/modelos/{version}/publicar` y `/revertir`) pasa a pedir el JWT del médico. La web del médico es la única entrada con usuario y contraseña.
+- **Cuentas y tokens viejos:** una fila de `revision.usuarios` con `rol = 'equipo'` ya no puede entrar (401 `credenciales_invalidas`, igual que una contraseña mala), y un JWT con `rol: equipo` se rechaza con 401. No hace falta migración: la columna `rol` sigue siendo texto.
+- `scripts/crear_medico.py` ya no recibe `--rol`: siempre crea médicos.
+- **Alternativa:** que publicar y revertir los haga el servicio de reentrenamiento con `X-Api-Key`. Se descartó porque entonces ninguna persona revisaría la publicación de un modelo nuevo.
+- **Razón:** corrección del curso: el equipo de desarrollo no debe tener una cuenta en el sistema; solo el médico.
+
+### D40 · Edad (1 a 4 años) y sexo del niño o la niña
+- **Fecha:** 23/11/2026.
+- **Decisión:** la app los pide antes del cuestionario y los envía en dos lugares:
+  - `POST /v1/orientacion`: `edad_anios` y `sexo`. Van al mensaje del LLM («Datos del niño: 2 años, niña»), **no** al texto del embedding, para no cambiar la búsqueda ni el umbral calibrado (D34).
+  - La etiqueta preliminar de la donación (`etiqueta_preliminar.edad_anios` y `.sexo`). Así llegan al servicio de reentrenamiento (`GET /v1/interno/revision/etiquetas`), que puede usarlos para el modelo, y a la web del médico (`GET /v1/revision/{id}`).
+- **Valores:** `edad_anios` es un entero estricto de 1 a 4 (`"2"`, `true`, 0 o 5 → 422). `sexo` es `femenino` o `masculino`.
+- **Opcionales:** si faltan, se acepta igual, porque las versiones anteriores de la app y las donaciones ya guardadas no los traen.
+- **Alternativa:** edad en meses (12 a 59). Se descartó porque la app pide años, igual que el alcance del proyecto (1 a 4 años).
