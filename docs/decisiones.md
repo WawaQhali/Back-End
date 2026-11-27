@@ -281,3 +281,22 @@ Lo revisé con LiteRT (`ai-edge-litert`). Afecta al manifiesto de la sección 4 
   - C: un 4.º resultado, «Otra afección». Se descartó porque cambia el contrato de la app, el backend, el validador y la web antes de las pruebas del 27/11.
   - D: un mensaje fijo sin LLM. Se descartó porque se pierde el resumen según los síntomas.
 - **Razón:** que el resultado de la foto y la severidad no se contradigan, y que se derive al médico cuando la foto no se parece a una urticaria. **No arregla** el caso inverso (el modelo dice «compatible» sobre piel sana); para ese caso queda la opción A de la pregunta «¿Ves ronchas?».
+
+### D42 · Pregunta «¿Ves ronchas?» que corrige al modelo con piel sana (opción A)
+
+- **Fecha:** 27/11/2026.
+- **Problema:** en la prueba con un celular real, el modelo `1.1.1` dijo «compatible» (76 %) sobre un antebrazo sano y
+  quedó «indeterminado» (58 %) en otra foto. Con piel sana de primer plano acierta ~80 %, y con fotos distintas a las del
+  dataset (adultos con vello, con fondo) falla más. D41 no cubre este caso.
+- **Decisión (solo en la app, Mobile-App):**
+  - Al final del cuestionario, la app pregunta «¿Ves ronchas o manchas rojas en la piel de tu wawa?» (Sí / No / No estoy
+    seguro). **No** se agrega a `preguntas.json`: el backend valida el cuestionario v1 y respondería 422.
+  - Si la respuesta es «No» y el modelo dice «compatible» o «indeterminado», el resultado pasa a **no compatible** (D41:
+    severidad moderada y consulta médica). La pantalla lo dice: «Indicaste que no ves ronchas… El análisis de la foto
+    decía: …». Con «Sí» o «No estoy seguro» manda el modelo.
+  - La donación sigue mandando en `etiqueta_preliminar.clase` lo que dijo el **modelo**, para que la médica vea su error.
+- **Backend:** sin cambios. Recibe `no_compatible` + `moderada`, que ya acepta desde D41.
+- **Alternativas:** un `1.1.2` con más piel sana (necesita fotos propias, no da tiempo antes del 05/12); subir el
+  umbral de confianza solo para `compatible` (baja la sensibilidad, que es la métrica de la compuerta).
+- **Razón:** la app nunca dice «urticaria» sobre una piel que la mamá ve sana. La observación de quien cuida corrige al
+  modelo, y el resultado sigue derivando al médico.
